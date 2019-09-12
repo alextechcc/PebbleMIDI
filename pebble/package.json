@@ -1,0 +1,60 @@
+{
+  "name": "PebbleMIDI",
+  "author": "alextechcc",
+  "version": "0.1.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "PebbleMIDI",
+    "uuid": "67d2f349-4de2-40a1-bc67-a232be54af4b",
+    "sdkVersion": "3",
+    "enableMultiJS": false,
+    "targetPlatforms": [
+      "basalt"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [],
+    "resources": {
+      "media": [
+          {
+              "type": "bitmap",
+              "name": "PAUSE",
+              "file": "pause.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "PLAY",
+              "file": "play.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "UP",
+              "file": "up.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "DOWN",
+              "file": "down.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "UP_DISABLED",
+              "file": "up_disabled.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "DOWN_DISABLED",
+              "file": "down_disabled.png"
+          },
+          {
+              "type": "bitmap",
+              "name": "STOP",
+              "file": "stop.png"
+          }
+      ]
+    }
+  }
+}
