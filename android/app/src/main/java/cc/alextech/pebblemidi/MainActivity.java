@@ -1,11 +1,11 @@
 package cc.alextech.pebblemidi;
 
-import android.media.midi.MidiDeviceInfo;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -24,14 +24,16 @@ public class MainActivity extends AppCompatActivity implements PebbleListener {
     int program;
     Button listeningButton;
     private boolean listening;
+    private int[] oldAccel;
 
     protected void onStartListening() {
         Log.i(TAG, "Starting");
         pebbleCom.resume(getApplicationContext());
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        assert powerManager != null;
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "MyApp::MyWakelockTag");
-        wakeLock.acquire();
+        wakeLock.acquire(60*60*1000L /*1 Hour*/);
     }
 
     protected void onStopListening() {
@@ -70,15 +72,15 @@ public class MainActivity extends AppCompatActivity implements PebbleListener {
 
     @Override
     public void onPebbleData(PebbleDictionary data) {
-        final int BANK_UP = 1 << 1;
-        final int BANK_DOWN = 1;
+        final int PROGRAM_UP = 1 << 1;
+        final int PROGRAM_DOWN = 1;
 
         int button_status = data.getUnsignedIntegerAsLong(0).intValue();
-        if ((button_status & BANK_UP) == BANK_UP) {
-            handleBankUp();
+        if ((button_status & PROGRAM_UP) == PROGRAM_UP) {
+            handleProgramUp();
         }
-        if ((button_status & BANK_DOWN) == BANK_DOWN) {
-            handleBankDown();
+        if ((button_status & PROGRAM_DOWN) == PROGRAM_DOWN) {
+            handleProgramDown();
         }
         handleAccel(new int[]{
                 data.getUnsignedIntegerAsLong(1).intValue(),
@@ -86,34 +88,38 @@ public class MainActivity extends AppCompatActivity implements PebbleListener {
                 data.getUnsignedIntegerAsLong(3).intValue()});
     }
 
-    private void handleBankUp() {
-        Log.d(TAG, "Bank Up");
-        /*
+    private void handleProgramUp() {
+        Log.d(TAG, "Program Up");
         program = (program + 1) % MAX_PROGRAMS;
         midiHandler.midiCommand(MidiConstants.STATUS_PROGRAM_CHANGE, program);
-         */
         midiHandler.noteOn(1, 50, 127);
     }
 
-    private void handleBankDown() {
-        Log.d(TAG, "Bank Down");
-        /*
+    private void handleProgramDown() {
+        Log.d(TAG, "Program Down");
         program = (program + MAX_PROGRAMS - 1) % MAX_PROGRAMS;
         midiHandler.midiCommand(MidiConstants.STATUS_PROGRAM_CHANGE, program);
-        */
-        midiHandler.noteOn(1, 58, 127);
     }
 
-    private void handleAccel(int axis[]) {
-        Log.d(TAG, String.format("x: %d, y: %d, z: %d\n", axis[0], axis[1], axis[2]));
-        double mag = Math.sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
-        if (mag > 220.0 / 1.4) {
-            midiHandler.noteOn(1, 53, 127);
+    private void handleAccel(int[] axis) {
+        Log.d(TAG, String.format("Accel: x: %d, y: %d, z: %d\n", axis[0], axis[1], axis[2]));
+        float alpha = ((ProgressBar) findViewById(R.id.seekBar)).getProgress() / 100f;
+        int[] newAxis = new int[3];
+
+        if (oldAccel == null) {
+            oldAccel = new int[3];
+            System.arraycopy(axis, 0, oldAccel, 0, 3);
         }
-        /*
-        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x10, axis[0]);
-        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x11, axis[1]);
-        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x12, axis[2]);
-         */
+
+        for (int i = 0; i < 3; ++i) {
+            newAxis[i] = Math.round((1-alpha) * axis[i] + alpha * oldAccel[i]);
+            Log.d(TAG, String.format("Alpha: %f, axis[i]: %d, oldAccel[i]: %d, (1- alpha): %f", alpha, axis[i], oldAccel[i], 1-alpha));
+        }
+
+        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x10, newAxis[0]);
+        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x11, newAxis[1]);
+        midiHandler.midiCommand(MidiConstants.STATUS_CONTROL_CHANGE + 1, 0x12, newAxis[2]);
+
+        System.arraycopy(newAxis, 0, oldAccel, 0, 3);
     }
 }

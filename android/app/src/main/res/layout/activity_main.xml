@@ -40,4 +40,13 @@
         android:layout_marginTop="20dp"
         android:text="@string/start_listening" />
 
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="309dp"
+        android:layout_height="30dp"
+        android:layout_below="@+id/listening_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="27dp"
+        android:max="100" />
+
 </RelativeLayout>
